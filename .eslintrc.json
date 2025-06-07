@@ -1,0 +1,26 @@
+{
+    "root": true,
+    "ignorePatterns": [
+        "**/*.d.ts"
+    ],
+    "parser": "vue-eslint-parser",
+    "plugins": [
+        "@typescript-eslint/eslint-plugin",
+        "prettier",
+        "vue"
+    ],
+    "ecmaFeatures": {
+        "modules": true,
+        "spread": true,
+        "restParams": true
+    },
+    "parserOptions": {
+        "parser": "@typescript-eslint/parser",
+        "allowImportExportEverywhere": true
+        // 不限制eslint对import使用位置
+    },
+    "rules": {
+        // 这里添加你的规则配置
+        "prettier/prettier": "error"
+    }
+}

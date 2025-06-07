@@ -1,0 +1,20 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  // "compilerOptions": {
+  //       "baseUrl": ".", // 设置基础目录为项目根目录
+  //   "paths": {
+  //     "@/*": ["src/*"] // 配置路径别名，@ 代表 src 目录
+  //   }
+  // }
+  //   "include": [
+  //   "src/**/*" // 包含项目中的所有源文件
+  // ]
+}
