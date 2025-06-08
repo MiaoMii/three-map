@@ -1,6 +1,8 @@
 import * as THREE from "three";
-import * as d3 from "d3";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import { projection } from "../../utils/map";
+import { createBar } from "../../utils/mesh/bar-mesh";
+import { createLightPoint } from "../../utils/mesh/light-mesh";
 
 // const MAP_DEPTH = 1; // 地图块的深度
 let provinceMeshList = [] as any;
@@ -8,12 +10,6 @@ let topFaceMaterial: any;
 let sideMaterial: any;
 // 标签列表
 let labelList = [];
-// d3-geo墨卡托坐标转化
-const projection = d3
-  .geoMercator()
-  .center([108.923611, 34.540833]) // 中国地图中心点
-  .scale(1000) // 缩放比例
-  .translate([0, 0]); // 将地图原点放在Three.js场景的原点
 
 // 创建地图
 export const createMap = (data: any) => {
@@ -53,9 +49,19 @@ export const createMap = (data: any) => {
         provinceMeshList.push(mesh);
       });
     }
+
+    // 创建标签
     const label = drawLabelText(feature);
-    labelList.push({ name: feature.properties.name, label });
     label && province.add(label);
+
+    // 创建柱状图
+    const bar = createBar(feature);
+    bar && province.add(bar);
+
+    // 创建光柱
+    const light = createLightPoint(feature);
+    light && province.add(light);
+
     map.add(province);
   });
   // map.rotation.x = -Math.PI / 2;
@@ -147,8 +153,8 @@ function drawBoundary(polygon: any) {
  * @returns 省份标签
  */
 function drawLabelText(province: any) {
-  if (!province.properties.center) return;
-  const [x, y] = projection(province.properties.center) as any;
+  if (!province.properties.centroid) return;
+  const [x, y] = projection(province.properties.centroid) as any;
 
   // const pos3 = new THREE.Vector3(x, y, 0); // Z = 0
 
@@ -172,5 +178,8 @@ function drawLabelText(province: any) {
   console.log(x, -y, "label", province.properties.name);
   label.position.set(x, -y, 100 + 0.05);
   // label.position.set(0, 0, 0);
+
+  labelList.push({ name: province.properties.name, label });
+
   return label;
 }

@@ -1,55 +1,62 @@
 import * as THREE from "three";
+import * as d3 from "d3";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
 //  相机
-let camera: THREE.Camera
-export function createCamera({ width, height }:Record<string, number>) {
+let camera: THREE.Camera;
+export function createCamera({ width, height }: Record<string, number>) {
   camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
   return camera;
 }
+// d3-geo墨卡托坐标转化
+export const projection = d3
+  .geoMercator()
+  .center([108.923611, 34.540833]) // 中国地图中心点
+  .scale(1000) // 缩放比例
+  .translate([0, 0]); // 将地图原点放在Three.js场景的原点
 
 //  渲染器
-let renderer: THREE.WebGLRenderer
+let renderer: THREE.WebGLRenderer;
 export const createRenderer = (el: HTMLElement, { width, height }: Record<string, number>) => {
   renderer = new THREE.WebGLRenderer({
-    antialias: true // 开启优化锯齿
+    antialias: true, // 开启优化锯齿
   });
   renderer.setPixelRatio(window.devicePixelRatio); // 防止输出模糊
   renderer.setSize(width, height); // 设置画布
-  renderer.setClearColor('#ffffff', 1); // 设置背景颜色和透明度
+  renderer.setClearColor("#ffffff", 1); // 设置背景颜色和透明度
   el.appendChild(renderer.domElement);
-  return renderer
-}
+  return renderer;
+};
 
 // 场景
-let scene: THREE.Scene
+let scene: THREE.Scene;
 export const createScene = () => {
   scene = new THREE.Scene();
-  return scene
-}
+  return scene;
+};
 
 // 初始化Three
 export const initThree = (el: HTMLElement, { width, height }: Record<string, number>) => {
   createCamera({ width, height });
   createRenderer(el, { width, height });
   createScene();
-  createControls(camera, renderer)
+  createControls(camera, renderer);
   return {
     camera,
     renderer,
     scene,
-    controls
-  }
-}
+    controls,
+  };
+};
 
 // 轨道控制器
 // 轨道控制器可以使得相机围绕目标进行轨道运动。
-let controls: any = null
+let controls: any = null;
 export function createControls(camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.update(); // update()函数内会执行camera.lookAt(controls.target)
-  return controls
+  return controls;
 }
-
 
 // 包围盒Box3
 export function box3(mesh: any) {
@@ -63,15 +70,14 @@ export function box3(mesh: any) {
   return { size, center };
 }
 
-
 export function getDepth(size: any) {
   const max = Math.max(...size);
   const depth = max / 16;
-  return { depth, max }
+  return { depth, max };
 }
 
 // 坐标矫正
-export const setCenter = (map:THREE.Mesh) => {
+export const setCenter = (map: THREE.Mesh) => {
   // map.rotation.x = -Math.PI / 2;
   // 创建一个Box3对象，并通过调用setFromObject(map)方法，将map的包围盒信息存储在box变量中
   // box变量现在包含了map对象的边界范围
@@ -86,7 +92,7 @@ export const setCenter = (map:THREE.Mesh) => {
 
 // 重置地图的尺寸
 export function setScale(group: any, size: any) {
-  const { depth } = getDepth(size)
+  const { depth } = getDepth(size);
   // 根据最大边长设置缩放倍数，尽量全屏显示
   // 过大会超出屏幕范围，过小全屏效果不明显
   // Math.max(...size) 计算包围盒的最大边长
@@ -101,15 +107,15 @@ export function setScale(group: any, size: any) {
   group.position.z = group.position.z - box.center.z;
 
   // 根据地图大小控制地图显示高度
-  const map3D = group.children[0]
+  const map3D = group.children[0];
   map3D.traverse((obj: any) => {
     // 找到组成地图块的模型
-    if (obj.colorName == 'mapMesh') {
+    if (obj.colorName == "mapMesh") {
       // 设置当前地图的高度
       const shapes = obj.geometry.parameters.shapes;
       const shapeGeometry = new THREE.ExtrudeGeometry(shapes, {
         depth: depth,
-        bevelEnabled: false
+        bevelEnabled: false,
       });
       obj.geometry = shapeGeometry;
     }

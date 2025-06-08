@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@antv/x6": "^2.18.1",
+    "@tweenjs/tween.js": "^25.0.0",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^20.14.10",
     "d3": "^7.9.0",
