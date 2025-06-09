@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import * as d3 from "d3";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-
+import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 //  相机
 let camera: THREE.Camera;
 export function createCamera({ width, height }: Record<string, number>) {
-  camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
   return camera;
 }
 // d3-geo墨卡托坐标转化
@@ -23,9 +23,22 @@ export const createRenderer = (el: HTMLElement, { width, height }: Record<string
   });
   renderer.setPixelRatio(window.devicePixelRatio); // 防止输出模糊
   renderer.setSize(width, height); // 设置画布
-  renderer.setClearColor("#ffffff", 1); // 设置背景颜色和透明度
+  // renderer.setClearColor("#ffffff", 1); // 设置背景颜色和透明度
   el.appendChild(renderer.domElement);
   return renderer;
+};
+
+let css2Renderer: any;
+export const creatCSS2DRenderer = (el: HTMLElement, { width, height }: Record<string, number>) => {
+  // 2d渲染器
+  css2Renderer = new CSS2DRenderer();
+  css2Renderer.setSize(width, height);
+  css2Renderer.domElement.style.position = "absolute";
+  css2Renderer.domElement.style.top = "0px";
+  css2Renderer.domElement.style.left = "0px";
+  css2Renderer.domElement.style.pointerEvents = "none";
+  el.appendChild(css2Renderer.domElement);
+  return css2Renderer;
 };
 
 // 场景
@@ -36,16 +49,19 @@ export const createScene = () => {
 };
 
 // 初始化Three
-export const initThree = (el: HTMLElement, { width, height }: Record<string, number>) => {
+export const initThree = (el: HTMLElement, [w, h]: number[]) => {
+  const [width, height] = [w, h];
   createCamera({ width, height });
   createRenderer(el, { width, height });
   createScene();
+  creatCSS2DRenderer(el, { width, height });
   createControls(camera, renderer);
   return {
     camera,
     renderer,
     scene,
     controls,
+    css2Renderer,
   };
 };
 

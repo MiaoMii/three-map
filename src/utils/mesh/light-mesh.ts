@@ -1,6 +1,6 @@
 // 地图上的光柱
 import * as THREE from "three";
-import TWEEN from "@tweenjs/tween.js";
+// import TWEEN from "@tweenjs/tween.js";
 const texture = new THREE.TextureLoader();
 import { projection } from "../../utils/map";
 
@@ -42,35 +42,25 @@ export const createLightHalo = () => {
     transparent: true,
     depthWrite: false, // 禁止写入深度缓冲区数据
   });
-
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), lightHalo) as any;
+  const geometry = new THREE.PlaneGeometry(1.5, 1.5);
+  const mesh = new THREE.Mesh(geometry, lightHalo) as any;
   mesh.renderOrder = 98;
   mesh.colorName = "light";
-  // 缩放
-  // const scale = 10;
-  // mesh.scale.set(scale, scale, scale);
-  // mesh.disabled = true;
-  // // 动画延迟时间
-  // const delay = random(0, 2000);
-  // // 动画：透明度缩放动画
-  // mesh.tween1 = new TWEEN.Tween({ scale: scale, opacity: 0 })
-  //   .to({ scale: scale * 1.5, opacity: 1 }, 1000)
-  //   .delay(delay)
-  //   .onUpdate((params) => {
-  //     let { scale, opacity } = params;
-  //     mesh.scale.set(scale, scale, scale);
-  //     mesh.material.opacity = opacity;
-  //   });
-  // mesh.tween2 = new TWEEN.Tween({ scale: scale * 1.5, opacity: 1 })
-  //   .to({ scale: scale * 2, opacity: 0 }, 1000)
-  //   .onUpdate((params) => {
-  //     let { scale, opacity } = params;
-  //     mesh.scale.set(scale, scale, scale);
-  //     mesh.material.opacity = opacity;
-  //   });
-  // mesh.tween1.chain(mesh.tween2);
-  // mesh.tween2.chain(mesh.tween1);
-  // mesh.tween1.start();
+  mesh.geometry = geometry;
+  mesh.lightHalo = lightHalo;
+  mesh.animate = (cube: THREE.Mesh | any, time: any) => {
+    // 透明度递减
+    cube.lightHalo.opacity -= 0.1;
+    // 尺寸放大
+    const currentScale = cube.scale.x;
+    const newScale = currentScale + 0.001; // 缩放速度可以调整
+    cube.scale.set(newScale, newScale, newScale);
+    // 当透明度几乎为0或者尺寸超过最大限制时，重置动画
+    if (cube.lightHalo.opacity <= 0) {
+      cube.lightHalo.opacity = 1;
+      mesh.scale.set(0.25, 0.25, 0.25);
+    }
+  };
   return mesh;
 };
 

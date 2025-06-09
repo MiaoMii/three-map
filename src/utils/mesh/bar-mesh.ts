@@ -30,7 +30,7 @@ export const createBar = (province: any) => {
   const height = (bar.value / bar.total) * 20;
   const group = new THREE.Group();
   // 1. 柱状图
-  const barMesh = createBarMesh(height);
+  const barMesh = createBarMesh(height, 0xffffff, 0x337ec0); // 顶部红色，底部蓝色
   // 2. 标签
   //   const tagMesh = createTag(bar, [x, y]);
   // 3. 数字
@@ -43,19 +43,49 @@ export const createBar = (province: any) => {
   return group;
 };
 
-export function createBarMesh(height: number) {
+export function createBarMesh(height: number, topColorHex: number, bottomColorHex: number) {
   const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, height, 100);
   cylinderGeometry.translate(0, height / 2, 0); // 将原点置于底部
 
   // 柱体材质
-  const barMaterial = new THREE.MeshStandardMaterial({
-    emissive: "#2a669d",
-    // roughness: 0.45, // 粗糙度
-    // metalness: 0.8, // 金属度
-    transparent: true, // 使用背景透明的png贴图，注意开启透明计算
+  const barMaterial = new THREE.ShaderMaterial({
     side: THREE.DoubleSide, // 两面可见
-    color: "#2a669d",
-    opacity: 1,
+    vertexColors: true, // 允许顶点颜色
+    transparent: true, // 如果需要透明效果，请设置为true
+    uniforms: {
+      topColor: { value: new THREE.Color(topColorHex) },
+      bottomColor: { value: new THREE.Color(bottomColorHex) },
+      barHeight: { value: height }, // 将实际高度传递给shader
+    },
+    vertexShader: `
+      varying vec3 vPosition;
+      // varying float vWorldY; // 或者使用世界坐标的Y值
+
+      void main() {
+        vPosition = position;
+        // vWorldY = (modelMatrix * vec4(position, 1.0)).y; // 如果使用世界Y坐标
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vPosition;
+      // varying float vWorldY;
+      uniform vec3 topColor;
+      uniform vec3 bottomColor;
+      uniform float barHeight;
+
+      void main() {
+        // 使用局部坐标的Y值进行插值
+        // 注意：cylinderGeometry.translate(0, height / 2, 0)后，局部Y的范围是 [0, height]
+        float percent = vPosition.y / barHeight;
+        
+        // 如果使用世界坐标的Y值，需要根据实际情况调整插值范围
+        // float t = smoothstep(worldYBottom, worldYTop, vWorldY); // worldYBottom 和 worldYTop 需要计算或传入
+
+        vec3 color = mix(bottomColor, topColor, percent);
+        gl_FragColor = vec4(color, 1.0); // 设置当前像素点的颜色，如果需要透明，可以调整alpha值
+      }
+    `,
   });
 
   const barMesh = new THREE.Mesh(cylinderGeometry, barMaterial) as any;

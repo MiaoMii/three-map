@@ -4,49 +4,33 @@
   import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
   import { getMapData } from "../../api/map";
   import { createMap } from "../../utils/mesh/map-mesh.ts";
+  import { creatFloor } from "../../utils/mesh/bg-mesh.ts";
+  import { createAdvancedFlyingLine } from "../../utils/mesh/line-mesh.ts"; // 导入飞线函数
   import gsap from "gsap";
-  import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-  // import { box3, setCenter, setScale, getDepth } from "../../utils/map.ts";
+  import { initThree, projection } from "../../utils/map.ts"; // 假设 projection 在这里
 
+  let flyingLines: any;
   let map: any;
   let node: any;
   let renderer: THREE.WebGLRenderer;
   let css2Renderer: any;
-  let camera: THREE.PerspectiveCamera;
+  let camera: THREE.Camera;
   let controls: OrbitControls;
   let scene: THREE.Scene;
   const raycaster = new THREE.Raycaster();
-  let selectedObject: any;
+  // let selectedObject: any;
   nextTick(() => {
-    // 创建场景
-    scene = new THREE.Scene();
     node = document.getElementsByClassName("map")[0] as HTMLElement;
-    // const { width, height } = node.getBoundingClientRect();
-    // 创建相机
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+    ({ camera, renderer, scene, controls, css2Renderer } = initThree(node, [window.innerWidth, window.innerHeight]));
+    controls.update;
+    // controls.minDistance = 50;
+    // controls.maxDistance = 1000;
+    // controls.maxPolarAngle = Math.PI / 2 - 0.1;
+    // // 创建坐标系辅助器，显示 X, Y, Z 轴
+    // var axesHelper = new THREE.AxesHelper(1000); // 参数表示坐标轴的长度
+    // scene.add(axesHelper);
 
-    // 创建渲染器
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    node.appendChild(renderer.domElement);
-
-    // 2d 渲染器
-    // 2d渲染器
-    css2Renderer = new CSS2DRenderer();
-    css2Renderer.setSize(window.innerWidth, window.innerHeight);
-    css2Renderer.domElement.style.position = "absolute";
-    css2Renderer.domElement.style.top = "0px";
-    css2Renderer.domElement.style.left = "0px";
-    css2Renderer.domElement.style.pointerEvents = "none";
-    node.appendChild(css2Renderer.domElement);
-
-    // 控制器
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.update();
-    // 创建坐标系辅助器，显示 X, Y, Z 轴
-    var axesHelper = new THREE.AxesHelper(1000); // 参数表示坐标轴的长度
-    scene.add(axesHelper);
-
+    //  初始化地图
     initMap();
 
     // 渲染
@@ -73,8 +57,8 @@
       const provinceMeshList = scene.getObjectByName("mapMesh") as any;
 
       // 检查交叉对象（你可以指定目标组）
-      let intersects = raycaster.intersectObjects(provinceMeshList, false);
-      if (intersects?.length > 0) {
+      let intersects = raycaster.intersectObjects(provinceMeshList || [], false);
+      if (intersects && intersects.length > 0) {
         // const firstHit = intersects[0].object as any;
         // // 查找顶级 Object3D
         // const targetRoot = firstHit.parent; // 或使用递归向上找特定组
@@ -103,9 +87,7 @@
       // const provinceMeshList = scene.getObjectByName("mapObject3D").children as any;
       let intersects = raycaster.intersectObjects(map.provinceMeshList, false);
 
-      console.log(intersects, "intersects");
-
-      if (intersects.length) {
+      if (intersects && intersects?.length) {
         let temp = intersects[0].object;
         animation(temp.parent);
       } else {
@@ -154,17 +136,36 @@
   }
 
   // 注册 click
-  const registerClick = () => {};
-
+  // const registerClick = () => {};
+  const delta = new THREE.Clock().getDelta();
   // 创建动画循环
   const animate = () => {
     requestAnimationFrame(animate);
-    controls.update();
+
+    // 清除深度缓存，让下一个渲染不受深度测试影响
+    renderer.clearDepth();
+
+    // 遍历场景中所有对象
+    scene.traverse((obj: any) => {
+      if (typeof obj.animate === "function") {
+        obj.animate(obj, delta);
+      }
+    });
+
+    // 更新飞线动画 (如果飞线自身的animate方法不够用，或者有统一管理的需求)
+    // flyingLines.forEach(lineGroup => {
+    //   if (lineGroup && typeof (lineGroup as any).animate === 'function') {
+    //     (lineGroup as any).animate();
+    //   }
+    // });
+
     // 渲染场景
     renderer.render(scene, camera);
 
     // 渲染 CSS2D 标签
     css2Renderer.render(scene, camera);
+
+    // TWEEN.update();
   };
 
   // import {
@@ -197,12 +198,18 @@
 
   const initMap = () => {
     // 创建背景
-    // creatFloor()
-
+    loadFloor();
     // 初始化光源
     initLight();
     // 渲染地图
     loadMapData(100000);
+  };
+
+  // 背景图
+  const loadFloor = () => {
+    if (!scene) return;
+    const bgMesh = creatFloor();
+    scene.add(bgMesh);
   };
 
   /**
@@ -274,7 +281,32 @@
       // camera.position.set(0, 0, 5);
       // camera.lookAt(new THREE.Vector3(0, 0, 0));
       scene.add(map);
+
+      // 地图加载完毕后，可以根据地图数据添加飞线
+      addFlyingLinesFromMapData(res);
     });
+  };
+
+  // 根据地图数据添加飞线 (示例)
+  const addFlyingLinesFromMapData = (geoJsonData: any) => {
+    // 假设 geoJsonData.features 包含各个省份的信息，并且有 centroid
+    if (geoJsonData && geoJsonData.features && geoJsonData.features.length > 1) {
+      // 例如，从第一个省份的中心点到第二个省份的中心点
+      const feature1 = geoJsonData.features[0];
+      const feature2 = geoJsonData.features[19];
+
+      if (feature1.properties && feature1.properties.centroid && feature2.properties && feature2.properties.centroid) {
+        const [x1, y1] = projection(feature1.properties.centroid) as [number, number];
+        const start = new THREE.Vector3(x1, -y1, 100); // Z轴设为10，确保在地图上方
+
+        const [x2, y2] = projection(feature2.properties.centroid) as [number, number];
+        const end = new THREE.Vector3(x2, -y2, 100);
+
+        const flyLine = createAdvancedFlyingLine(start, end, 0x2a669d, 200);
+        scene.add(flyLine);
+        flyingLines.push(flyLine);
+      }
+    }
   };
 </script>
 <template>
