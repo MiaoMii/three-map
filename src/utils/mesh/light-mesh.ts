@@ -46,17 +46,22 @@ export const createLightHalo = () => {
   const mesh = new THREE.Mesh(geometry, lightHalo) as any;
   mesh.renderOrder = 98;
   mesh.colorName = "light";
-  mesh.geometry = geometry;
+  mesh.animatTime = {
+    duration: 4,
+    transition: 0.5,
+    elapsed: 0,
+  };
   mesh.lightHalo = lightHalo;
   mesh.animate = (cube: THREE.Mesh | any, time: any) => {
     // 透明度递减
-    cube.lightHalo.opacity -= 0.1;
+    cube.lightHalo.opacity -= time * 0.5;
     // 尺寸放大
     const currentScale = cube.scale.x;
     const newScale = currentScale + 0.001; // 缩放速度可以调整
+
     cube.scale.set(newScale, newScale, newScale);
-    // 当透明度几乎为0或者尺寸超过最大限制时，重置动画
-    if (cube.lightHalo.opacity <= 0) {
+
+    if (newScale > 0.3) {
       cube.lightHalo.opacity = 1;
       mesh.scale.set(0.25, 0.25, 0.25);
     }

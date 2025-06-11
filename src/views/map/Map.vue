@@ -8,7 +8,9 @@
   import { createAdvancedFlyingLine } from "../../utils/mesh/line-mesh.ts"; // 导入飞线函数
   import gsap from "gsap";
   import { initThree, projection } from "../../utils/map.ts"; // 假设 projection 在这里
-
+  import popBox from "../../components/Pop-box.vue";
+  import { createMarkBox } from "../../utils/mesh/pop-mesh.ts";
+  import chinaJson from "../../assets/china.json";
   let flyingLines: any;
   let map: any;
   let node: any;
@@ -54,21 +56,17 @@
       raycaster.setFromCamera(mouse, camera);
 
       // 获取地图的mesh
-      const provinceMeshList = scene.getObjectByName("mapMesh") as any;
+      // const provinceMeshList = scene.getObjectByName("mapMesh") as any;
 
       // 检查交叉对象（你可以指定目标组）
-      let intersects = raycaster.intersectObjects(provinceMeshList || [], false);
+      let intersects = raycaster.intersectObjects(map.provinceMeshList || [], false);
       if (intersects && intersects.length > 0) {
-        // const firstHit = intersects[0].object as any;
-        // // 查找顶级 Object3D
-        // const targetRoot = firstHit.parent; // 或使用递归向上找特定组
-        // // 取消前一个高亮
-        // if (selectedObject) {
-        //   unhighlightObject3D(selectedObject);
-        // }
-        // // 应用高亮（例如用 emissive 增亮）
-        // highlightObject3D(targetRoot);
-        // selectedObject = targetRoot;
+        // 创建详情弹窗
+        console.log();
+        const tempFeature = intersects[0].object.parent?.feature;
+        if (tempFeature) {
+          createMarkBox(tempFeature);
+        }
       }
     });
   };
@@ -238,53 +236,30 @@
     scene.add(directionalLight);
   }
 
-  // // 创建地板
-  // const creatFloor = () => {
-  //   const group = new THREE.Group()
-  //   group.name = '背景'
-
-  //   // 底部光圈
-  //   bgMesh = new THREE.MeshPhongMaterial({
-  //     map: new THREE.TextureLoader().load("/src/assets/images/floor/circle-point.png"),
-  //     transparent: true,
-  //     color: '0x00ffff',
-  //     opacity: 1,
-  //     depthTest: true,
-  //     side: THREE.DoubleSide, // 两面可见
-  //   })
-
-  //   const plane = new THREE.PlaneGeometry(40, 40)
-  //   const mesh = new THREE.Mesh(plane, bgMesh)
-  //   mesh.position.z = -0.1
-  //   scene.add(mesh)
-  // }
-
   const loadMapData = (code: number) => {
-    getMapData(code).then((res) => {
-      map = createMap(res) as any;
+    map = createMap(chinaJson) as any;
 
-      // 计算场景的边界
-      var box = new THREE.Box3().setFromObject(map); // 使用立方体作为参考
-      var center = box.getCenter(new THREE.Vector3()); // 获取场景中心
-      var size = box.getSize(new THREE.Vector3()); // 获取场景大小
+    // 计算场景的边界
+    var box = new THREE.Box3().setFromObject(map); // 使用立方体作为参考
+    var center = box.getCenter(new THREE.Vector3()); // 获取场景中心
+    var size = box.getSize(new THREE.Vector3()); // 获取场景大小
 
-      // 根据场景的大小来调整相机的远近
-      var maxDim = Math.max(size.x, size.y, size.z);
-      var cameraDistance = maxDim * 1.5; // 给定相机距离为最大维度的1.5倍
+    // 根据场景的大小来调整相机的远近
+    var maxDim = Math.max(size.x, size.y, size.z);
+    var cameraDistance = maxDim * 1.5; // 给定相机距离为最大维度的1.5倍
 
-      // 设置相机的位置
-      camera.position.set(center.x, -1000, cameraDistance);
+    // 设置相机的位置
+    camera.position.set(center.x, -1000, cameraDistance);
 
-      // 让相机始终朝向场景中心
-      camera.lookAt(center);
+    // 让相机始终朝向场景中心
+    camera.lookAt(center);
 
-      // camera.position.set(0, 0, 5);
-      // camera.lookAt(new THREE.Vector3(0, 0, 0));
-      scene.add(map);
+    // camera.position.set(0, 0, 5);
+    // camera.lookAt(new THREE.Vector3(0, 0, 0));
+    scene.add(map);
 
-      // 地图加载完毕后，可以根据地图数据添加飞线
-      addFlyingLinesFromMapData(res);
-    });
+    // 地图加载完毕后，可以根据地图数据添加飞线
+    addFlyingLinesFromMapData(chinaJson);
   };
 
   // 根据地图数据添加飞线 (示例)
@@ -304,12 +279,13 @@
 
         const flyLine = createAdvancedFlyingLine(start, end, 0x2a669d, 200);
         scene.add(flyLine);
-        flyingLines.push(flyLine);
+        flyingLines?.push(flyLine);
       }
     }
   };
 </script>
 <template>
   <div class="w-[100vw] h-[100vh] map" ref="mapRef"></div>
+  <popBox />
 </template>
 <style scoped></style>

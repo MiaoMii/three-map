@@ -44,6 +44,7 @@ export const createMap = (data: any) => {
       feature.geometry.coordinates.forEach((coordinate: any) => {
         const line = drawBoundary(coordinate);
         const mesh = drawExtrudeMesh(coordinate); // drawExtrudeMesh 内部需要应用材质
+
         province.add(line);
         province.add(mesh);
         provinceMeshList.push(mesh);
@@ -62,6 +63,8 @@ export const createMap = (data: any) => {
     const light = createLightPoint(feature);
     light && province.add(light);
 
+    province.feature = feature;
+
     map.add(province);
   });
   // map.rotation.x = -Math.PI / 2;
@@ -73,10 +76,14 @@ const setTextture = () => {
   // // 使用多材质数组
   topFaceMaterial = new THREE.MeshBasicMaterial({
     map: new THREE.TextureLoader().load("/src/assets/images/mesh/gz-map.jpg"),
+    color: "#b4eeea",
+    combine: THREE.MultiplyOperation,
+    transparent: true,
+    opacity: 0.8,
   });
 
   sideMaterial = new THREE.MeshBasicMaterial({
-    color: "#3480C4",
+    color: "#123024",
     transparent: true,
     opacity: 0.8,
   });
@@ -175,7 +182,6 @@ function drawLabelText(province: any) {
   // label.scale.set(0.01, 0.01, 0.01);
   // Use -y for the y-coordinate to match geometry
   // label.position.x = pos3.x;
-  console.log(x, -y, "label", province.properties.name);
   label.position.set(x, -y, 100 + 0.05);
   // label.position.set(0, 0, 0);
 

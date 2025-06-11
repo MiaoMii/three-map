@@ -46,7 +46,7 @@ export const createScenebg = () => {
 const creatBgMesh = (url: string, size: number[] = [2000, 2000]) => {
   const geometry = new THREE.PlaneGeometry(size[0], size[1]);
   const material = new THREE.MeshBasicMaterial({
-    // color: 0xffff00,
+    color: "#b4eeea",
     transparent: true,
     depthWrite: false, // 关闭写入深度缓冲
     side: THREE.DoubleSide,

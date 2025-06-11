@@ -9,9 +9,7 @@ Object.keys(viewFiles).forEach((path: string) => {
   // 修改 routePath 的生成逻辑
   // 例如: ../views/user/Login.vue -> /user/Login
   // 例如: ../views/home.vue -> /home
-  const routePath = path
-    .replace("../views", "")
-    .replace(".vue", "");
+  const routePath = path.replace("../views", "").replace(".vue", "");
 
   const route = {
     path: routePath, // 使用处理后的路径，确保它是以 / 开头
@@ -19,5 +17,5 @@ Object.keys(viewFiles).forEach((path: string) => {
   };
   fileRouter.push(route);
 });
-console.log(fileRouter)
+console.log(fileRouter);
 export default fileRouter;

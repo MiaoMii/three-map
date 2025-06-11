@@ -10,6 +10,8 @@ declare module 'vue' {
     AppProvider: typeof import('./src/components/common/app-provider.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     LearnCanvas: typeof import('./src/components/learnCanvas.vue')['default']
+    MapBox: typeof import('./src/components/Map-box.vue')['default']
+    PopBox: typeof import('./src/components/Pop-box.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }
