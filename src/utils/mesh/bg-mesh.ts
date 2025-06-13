@@ -11,6 +11,7 @@ export const creatFloor = () => {
   group.add(gridBg);
   group.add(lightHalo);
   group.add(lightHalo1);
+  // group.rotation.x = -Math.PI / 2;
   return group;
 };
 

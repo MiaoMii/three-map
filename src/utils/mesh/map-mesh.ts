@@ -67,8 +67,10 @@ export const createMap = (data: any) => {
 
     map.add(province);
   });
-  // map.rotation.x = -Math.PI / 2;
+
   (map as any).provinceMeshList = provinceMeshList;
+  // map.rotation.x = -Math.PI / 2;
+  map.renderOrder = 1;
   return map;
 };
 
@@ -79,7 +81,7 @@ const setTextture = () => {
     color: "#b4eeea",
     combine: THREE.MultiplyOperation,
     transparent: true,
-    opacity: 0.8,
+    opacity: 1,
   });
 
   sideMaterial = new THREE.MeshBasicMaterial({
