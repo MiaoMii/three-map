@@ -11,6 +11,8 @@
   import popBox from "../../components/Pop-box.vue";
   import { createMarkBox } from "../../utils/mesh/pop-mesh.ts";
   import chinaJson from "../../assets/china.json";
+  import * as d3 from "d3";
+
   let flyingLines: any;
   let map: any;
   let node: any;
@@ -167,8 +169,8 @@
 
     // 遍历场景中所有对象
     scene.traverse((obj: any) => {
-      if (typeof obj.animate === "function") {
-        obj.animate(obj, delta);
+      if (typeof obj.userData.animate === "function") {
+        obj.userData.animate(obj, delta);
       }
     });
 
@@ -217,18 +219,19 @@
   // });
 
   const initMap = () => {
-    // 创建背景
-    loadFloor();
     // 初始化光源
     initLight();
     // 渲染地图
-    loadMapData(100000);
+    loadMapData();
   };
 
   // 背景图
   const loadFloor = () => {
     if (!scene) return;
-    const bgMesh = creatFloor();
+    var box = new THREE.Box3().setFromObject(map); // 使用立方体作为参考
+    var center = box.getCenter(new THREE.Vector3()); // 获取场景中心
+    var size = box.getSize(new THREE.Vector3()); // 获取场景大小
+    const bgMesh = creatFloor({ size, center });
     scene.add(bgMesh);
   };
 
@@ -258,7 +261,7 @@
     scene.add(directionalLight);
   }
 
-  const loadMapData = (code: number) => {
+  const loadMapData = () => {
     map = createMap(chinaJson) as any;
 
     // 计算场景的边界
@@ -282,6 +285,45 @@
 
     // 地图加载完毕后，可以根据地图数据添加飞线
     addFlyingLinesFromMapData(chinaJson);
+  };
+
+  function generateSVG(geojson) {
+    const width = 1024,
+      height = 1024;
+
+    // 投影（可根据实际数据改成墨卡托投影等）
+    const projection = d3
+      .geoIdentity()
+      .reflectY(true) // Y轴翻转以适应SVG坐标
+      .fitSize([width, height], geojson);
+
+    const pathGenerator = d3.geoPath().projection(projection);
+
+    // 创建 SVG 字符串
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">\n`;
+    svg += `<g fill="none" stroke="black" stroke-width="1">\n`;
+
+    geojson.features.forEach((feature) => {
+      const pathData = pathGenerator(feature);
+      svg += `<path d="${pathData}" />\n`;
+    });
+
+    svg += `</g>\n</svg>`;
+
+    return svg;
+  }
+
+  document.getElementById("download").onclick = () => {
+    const svg = generateSVG(geojson);
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "map-outline.svg";
+    a.click();
+
+    URL.revokeObjectURL(url);
   };
 
   // 根据地图数据添加飞线 (示例)

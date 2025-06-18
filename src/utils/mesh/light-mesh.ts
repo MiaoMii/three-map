@@ -45,7 +45,28 @@ export const createLightHalo = () => {
   }) as any;
   const geometry = new THREE.PlaneGeometry(1.5, 1.5);
   const mesh = new THREE.Mesh(geometry, lightHalo) as any;
-  mesh.colorName = "light";
+  mesh.userData["material"] = lightHalo;
+  mesh.userData["size"] = 0.2; //自顶一个属性，表示mesh静态大小
+  mesh.userData["scale"] = Math.random() * 1.0; //自定义属性._s表示mesh在原始大小基础上放大倍数  光圈在原来mesh.size基础上1~2倍之间变化
+  mesh.animate = (cube: any, t: any) => {
+    cube.userData["scale"] += 0.007;
+    cube.scale.set(
+      cube.userData["size"] * cube.userData["scale"],
+      cube.userData["size"] * cube.userData["scale"],
+      cube.userData["size"] * cube.userData["scale"],
+    );
+    if (cube.userData["scale"] <= 1.5) {
+      (cube.userData.material as THREE.Material).opacity = (cube.userData["scale"] - 1) * 2; //2等于1/(1.5-1.0)，保证透明度在0~1之间变化
+    } else if (cube.userData["scale"] > 1.5 && cube.userData["scale"] <= 2) {
+      (cube.userData.material as THREE.Material).opacity = 1 - (cube.userData["scale"] - 1.5) * 2; //2等于1/(2.0-1.5) cube缩放2倍对应0 缩放1.5被对应1
+    } else {
+      cube.userData["scale"] = 1;
+    }
+    // this.waveMeshArr.forEach((mesh: THREE.Mesh) => {
+
+    // });
+  };
+
   // mesh.animatTime = {
   //   duration: 4,
   //   transition: 0.5,
@@ -64,11 +85,11 @@ export const createLightHalo = () => {
   //     mesh.scale.set(0.25, 0.25, 0.25);
   //   }
   // };
-  gsap.to(lightHalo.opacity, {
-    opacity: 1, // 从 0 动画到 1
-    duration: 1, // 动画持续时间 1 秒
-    repeat: -1, // 无限循环
-  });
+  // gsap.to(lightHalo.opacity, {
+  //   opacity: 1, // 从 0 动画到 1
+  //   duration: 1, // 动画持续时间 1 秒
+  //   repeat: -1, // 无限循环
+  // });
   return mesh;
 };
 
