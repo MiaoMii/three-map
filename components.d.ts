@@ -10,5 +10,6 @@ declare module 'vue' {
     PopBox: typeof import('./src/components/Pop-box.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SystemTechnologyEarth: typeof import('./src/components/3060220009/SystemTechnologyEarth/SystemTechnologyEarth.vue')['default']
   }
 }

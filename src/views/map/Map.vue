@@ -11,6 +11,8 @@
   import popBox from "../../components/Pop-box.vue";
   import { createMarkBox } from "../../utils/mesh/pop-mesh.ts";
   import chinaJson from "../../assets/china.json";
+  import * as d3 from "d3";
+
   import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
   import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
   import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
@@ -36,6 +38,28 @@
     // // 创建坐标系辅助器，显示 X, Y, Z 轴
     // var axesHelper = new THREE.AxesHelper(1000); // 参数表示坐标轴的长度
     // scene.add(axesHelper);
+
+    // 创建一个网格辅助器（GridHelper）
+    const size = 1000; // 网格的大小
+    const divisions = 10; // 网格的划分数
+    const gridHelper = new THREE.GridHelper(size, divisions);
+    scene.add(gridHelper);
+
+    // 限制垂直旋转角度（俯仰角），这里限制在45度到135度之间
+    // controls.minPolarAngle = Math.PI / 4; // 45度
+    controls.maxPolarAngle = Math.PI / 2; // 90度
+
+    // 限制水平旋转角度（偏航角），这里限制在-90度到90度之间
+    // controls.minAzimuthAngle = -Math.PI / 4; // -90度
+    // controls.maxAzimuthAngle = Math.PI / 4; // 90度
+
+    // gsap.to(camera.position, {
+    //   x: 0,
+    //   y: -800,
+    //   z: 1000,
+    //   duration: 1,
+    //   ease: "power1.inOut",
+    // });
 
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
@@ -162,8 +186,8 @@
 
     // 遍历场景中所有对象
     scene.traverse((obj: any) => {
-      if (typeof obj.animate === "function") {
-        obj.animate(obj, delta);
+      if (typeof obj.userData.animate === "function") {
+        obj.userData.animate(obj, delta);
       }
     });
 
@@ -212,18 +236,20 @@
   // });
 
   const initMap = () => {
-    // 创建背景
-    loadFloor();
     // 初始化光源
     initLight();
     // 渲染地图
-    loadMapData(100000);
+    loadMapData();
+    loadFloor();
   };
 
   // 背景图
   const loadFloor = () => {
     if (!scene) return;
-    const bgMesh = creatFloor();
+    var box = new THREE.Box3().setFromObject(map); // 使用立方体作为参考
+    var center = box.getCenter(new THREE.Vector3()); // 获取场景中心
+    var size = box.getSize(new THREE.Vector3()); // 获取场景大小
+    const bgMesh = creatFloor({ size, center });
     scene.add(bgMesh);
   };
 
@@ -268,7 +294,7 @@
     var cameraDistance = maxDim * 1.5; // 给定相机距离为最大维度的1.5倍
 
     // 设置相机的位置
-    camera.position.set(center.x, -1000, cameraDistance);
+    camera.position.set(center.x, 1000, cameraDistance);
 
     // 让相机始终朝向场景中心
     camera.lookAt(center);

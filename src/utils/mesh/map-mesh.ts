@@ -70,41 +70,11 @@ const geojsonHanle = (data: FeatureCollection<Polygon | MultiPolygon>, fn: Funct
     }
     map.add(province);
   });
-};
 
-// const setTextture = () => {
-//   // // 使用多材质数组
-//   topFaceMaterial = new THREE.MeshBasicMaterial({
-//     map: new THREE.TextureLoader().load("/src/assets/images/mesh/gz-map.jpg"),
-//     color: "#b4eeea",
-//     combine: THREE.MultiplyOperation,
-//     transparent: true,
-//     opacity: 0.8,
-//   });
-
-//   sideMaterial = new THREE.MeshBasicMaterial({
-//     color: "#123024",
-//     transparent: true,
-//     opacity: 0.8,
-//   });
-// };
-
-/**
- * 创建shape
- * @param {*} polygon 区域坐标点数组
- * @returns THREE.
- */
-const createShape = (polygon: Polygon[]) => {
-  const shape = new THREE.Shape();
-  polygon.forEach((row: any, i: number) => {
-    const [x, y] = projection(row) as any;
-    if (i === 0) {
-      shape.moveTo(x, -y);
-    } else {
-      shape.lineTo(x, -y);
-    }
-  });
-  return shape;
+  (map as any).provinceMeshList = provinceMeshList;
+  map.rotation.x = -Math.PI / 2;
+  map.renderOrder = 1;
+  return map;
 };
 
 /**
@@ -117,7 +87,7 @@ const createExtrudeMaterial = () => {
     color: "#b4eeea",
     combine: THREE.MultiplyOperation,
     transparent: true,
-    opacity: 0.8,
+    opacity: 1,
   });
 
   const sideMaterial = new THREE.MeshBasicMaterial({

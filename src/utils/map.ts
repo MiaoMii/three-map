@@ -6,6 +6,7 @@ import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 let camera: THREE.Camera;
 export function createCamera({ width, height }: Record<string, number>) {
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
+  camera.position.set(0, 0, 0);
   return camera;
 }
 // d3-geo墨卡托坐标转化

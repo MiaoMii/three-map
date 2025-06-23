@@ -1,5 +1,6 @@
 // 地图上的光柱
 import * as THREE from "three";
+import gsap from "gsap";
 // import TWEEN from "@tweenjs/tween.js";
 const texture = new THREE.TextureLoader();
 import { projection } from "../../utils/map";
@@ -41,31 +42,54 @@ export const createLightHalo = () => {
     opacity: 0,
     transparent: true,
     depthWrite: false, // 禁止写入深度缓冲区数据
-  });
+  }) as any;
   const geometry = new THREE.PlaneGeometry(1.5, 1.5);
   const mesh = new THREE.Mesh(geometry, lightHalo) as any;
-  mesh.renderOrder = 98;
-  mesh.colorName = "light";
-  mesh.animatTime = {
-    duration: 4,
-    transition: 0.5,
-    elapsed: 0,
-  };
-  mesh.lightHalo = lightHalo;
-  mesh.animate = (cube: THREE.Mesh | any, time: any) => {
-    // 透明度递减
-    cube.lightHalo.opacity -= time * 0.5;
-    // 尺寸放大
-    const currentScale = cube.scale.x;
-    const newScale = currentScale + 0.001; // 缩放速度可以调整
-
-    cube.scale.set(newScale, newScale, newScale);
-
-    if (newScale > 0.3) {
-      cube.lightHalo.opacity = 1;
-      mesh.scale.set(0.25, 0.25, 0.25);
+  mesh.userData["material"] = lightHalo;
+  mesh.userData["size"] = 0.2; //自顶一个属性，表示mesh静态大小
+  mesh.userData["scale"] = Math.random() * 1.0; //自定义属性._s表示mesh在原始大小基础上放大倍数  光圈在原来mesh.size基础上1~2倍之间变化
+  mesh.animate = (cube: any, t: any) => {
+    cube.userData["scale"] += 0.007;
+    cube.scale.set(
+      cube.userData["size"] * cube.userData["scale"],
+      cube.userData["size"] * cube.userData["scale"],
+      cube.userData["size"] * cube.userData["scale"],
+    );
+    if (cube.userData["scale"] <= 1.5) {
+      (cube.userData.material as THREE.Material).opacity = (cube.userData["scale"] - 1) * 2; //2等于1/(1.5-1.0)，保证透明度在0~1之间变化
+    } else if (cube.userData["scale"] > 1.5 && cube.userData["scale"] <= 2) {
+      (cube.userData.material as THREE.Material).opacity = 1 - (cube.userData["scale"] - 1.5) * 2; //2等于1/(2.0-1.5) cube缩放2倍对应0 缩放1.5被对应1
+    } else {
+      cube.userData["scale"] = 1;
     }
+    // this.waveMeshArr.forEach((mesh: THREE.Mesh) => {
+
+    // });
   };
+
+  // mesh.animatTime = {
+  //   duration: 4,
+  //   transition: 0.5,
+  //   elapsed: 0,
+  // };
+  // mesh.lightHalo = lightHalo;
+  // mesh.animate = (cube: THREE.Mesh | any, time: any) => {
+  //   // 透明度递减
+  //   cube.lightHalo.opacity -= time * 0.5;
+  //   // 尺寸放大
+  //   const currentScale = cube.scale.x;
+  //   const newScale = currentScale + 0.001; // 缩放速度可以调整
+  //   cube.scale.set(newScale, newScale, newScale);
+  //   if (newScale > 0.3) {
+  //     cube.lightHalo.opacity = 1;
+  //     mesh.scale.set(0.25, 0.25, 0.25);
+  //   }
+  // };
+  // gsap.to(lightHalo.opacity, {
+  //   opacity: 1, // 从 0 动画到 1
+  //   duration: 1, // 动画持续时间 1 秒
+  //   repeat: -1, // 无限循环
+  // });
   return mesh;
 };
 
@@ -119,8 +143,9 @@ export const createLightPoint = (province: any) => {
   // 将光柱和标点添加到组里
   lights.add(bottomMesh, lightHalo, ...lightPillar);
   // 设置位置
-  lights.position.set(x, -y, 100 + 0.1);
+  lights.position.set(x, -y, 105 + 0.5);
   lights.scale.set(max / 10, max / 10, max / 10);
   lights.name = "lightPoint";
+  lights.renderOrder = 2;
   return lights;
 };
