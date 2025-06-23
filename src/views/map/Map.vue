@@ -41,12 +41,12 @@
     scene.add(gridHelper);
 
     // 限制垂直旋转角度（俯仰角），这里限制在45度到135度之间
-    controls.minPolarAngle = Math.PI / 4; // 45度
-    controls.maxPolarAngle = (Math.PI * 3) / 4; // 135度
+    // controls.minPolarAngle = Math.PI / 4; // 45度
+    controls.maxPolarAngle = Math.PI / 2; // 90度
 
     // 限制水平旋转角度（偏航角），这里限制在-90度到90度之间
-    controls.minAzimuthAngle = -Math.PI / 4; // -90度
-    controls.maxAzimuthAngle = Math.PI / 4; // 90度
+    // controls.minAzimuthAngle = -Math.PI / 4; // -90度
+    // controls.maxAzimuthAngle = Math.PI / 4; // 90度
 
     // gsap.to(camera.position, {
     //   x: 0,
@@ -223,6 +223,7 @@
     initLight();
     // 渲染地图
     loadMapData();
+    loadFloor();
   };
 
   // 背景图
@@ -285,45 +286,6 @@
 
     // 地图加载完毕后，可以根据地图数据添加飞线
     addFlyingLinesFromMapData(chinaJson);
-  };
-
-  function generateSVG(geojson) {
-    const width = 1024,
-      height = 1024;
-
-    // 投影（可根据实际数据改成墨卡托投影等）
-    const projection = d3
-      .geoIdentity()
-      .reflectY(true) // Y轴翻转以适应SVG坐标
-      .fitSize([width, height], geojson);
-
-    const pathGenerator = d3.geoPath().projection(projection);
-
-    // 创建 SVG 字符串
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">\n`;
-    svg += `<g fill="none" stroke="black" stroke-width="1">\n`;
-
-    geojson.features.forEach((feature) => {
-      const pathData = pathGenerator(feature);
-      svg += `<path d="${pathData}" />\n`;
-    });
-
-    svg += `</g>\n</svg>`;
-
-    return svg;
-  }
-
-  document.getElementById("download").onclick = () => {
-    const svg = generateSVG(geojson);
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "map-outline.svg";
-    a.click();
-
-    URL.revokeObjectURL(url);
   };
 
   // 根据地图数据添加飞线 (示例)

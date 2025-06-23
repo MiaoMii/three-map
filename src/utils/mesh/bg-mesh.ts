@@ -16,7 +16,7 @@ export const creatFloor = (config: any) => {
   group.add(lightHalo);
   group.add(lightHalo1);
   // group.add(...particl);
-  // group.rotation.x = -Math.PI / 2;
+  group.rotation.x = -Math.PI / 2;
   return group;
 };
 

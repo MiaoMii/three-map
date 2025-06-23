@@ -69,7 +69,7 @@ export const createMap = (data: any) => {
   });
 
   (map as any).provinceMeshList = provinceMeshList;
-  // map.rotation.x = -Math.PI / 2;
+  map.rotation.x = -Math.PI / 2;
   map.renderOrder = 1;
   return map;
 };
