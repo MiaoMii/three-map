@@ -11,9 +11,14 @@
   import popBox from "../../components/Pop-box.vue";
   import { createMarkBox } from "../../utils/mesh/pop-mesh.ts";
   import chinaJson from "../../assets/china.json";
+  import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+  import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+  import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+
   let flyingLines: any;
   let map: any;
   let node: any;
+  let composer: any;
   let renderer: THREE.WebGLRenderer;
   let css2Renderer: any;
   let camera: THREE.Camera;
@@ -32,6 +37,16 @@
     // var axesHelper = new THREE.AxesHelper(1000); // 参数表示坐标轴的长度
     // scene.add(axesHelper);
 
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      1.5, // strength
+      0.4, // radius
+      0.85, // threshold
+    );
+    composer.addPass(bloomPass);
     //  初始化地图
     initMap();
 
@@ -39,8 +54,8 @@
     animate();
 
     // 注册事件
-    setClickEvent();
-    setMouseOverEvent();
+    // setClickEvent();
+    // setMouseOverEvent();
   });
 
   // 鼠标事件
@@ -59,7 +74,7 @@
       // const provinceMeshList = scene.getObjectByName("mapMesh") as any;
 
       // 检查交叉对象（你可以指定目标组）
-      let intersects = raycaster.intersectObjects(map.provinceMeshList || [], false);
+      let intersects = raycaster.intersectObjects(map.provinceMeshList || [], false) as any;
       if (intersects && intersects.length > 0) {
         // 创建详情弹窗
         console.log();
@@ -142,6 +157,8 @@
 
     // 清除深度缓存，让下一个渲染不受深度测试影响
     renderer.clearDepth();
+
+    composer.render();
 
     // 遍历场景中所有对象
     scene.traverse((obj: any) => {
@@ -237,7 +254,9 @@
   }
 
   const loadMapData = (code: number) => {
-    map = createMap(chinaJson) as any;
+    map = createMap(chinaJson, {
+      camera,
+    }) as any;
 
     // 计算场景的边界
     var box = new THREE.Box3().setFromObject(map); // 使用立方体作为参考

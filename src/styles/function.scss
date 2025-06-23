@@ -1,4 +1,4 @@
-@import "./config";
+// @import "./config";
 
 /* BEM support Func
  -------------------------- */
@@ -21,24 +21,23 @@
 @function containWhenFlag($selector) {
   $selector: selectorToString($selector);
 
-  @if str-index($selector, '.' + $state-prefix) {
-    @return true
+  @if str-index($selector, "." + $state-prefix) {
+    @return true;
   } @else {
-    @return false
+    @return false;
   }
 }
 
 @function containPseudoClass($selector) {
   $selector: selectorToString($selector);
 
-  @if str-index($selector, ':') {
-    @return true
+  @if str-index($selector, ":") {
+    @return true;
   } @else {
-    @return false
+    @return false;
   }
 }
 
 @function hitAllSpecialNestRule($selector) {
-
   @return containsModifier($selector) or containWhenFlag($selector) or containPseudoClass($selector);
 }

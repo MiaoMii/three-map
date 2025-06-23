@@ -26,7 +26,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         // 全局变量
-        additionalData: `@import "./src/styles/mixin.scss";`,
+        additionalData: `@use "./src/styles/mixin.scss";`,
       },
     },
   },
