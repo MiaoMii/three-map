@@ -140,3 +140,30 @@ export function setScale(group: any, size: any) {
     if (obj.isUpLine) obj.position.z = depth + 0.0001;
   });
 }
+
+//  根据起点和终点获取曲线的坐标点
+export const getCurvePoint = (coord: any, divisions: number = 1000) => {
+  const { x0, y0, x1, y1 } = coord;
+  // 凸起高度 也就是飞线的高度
+  const convexZ = 100;
+  // 起点坐标
+  const v0 = new THREE.Vector3(x0, y0, 0);
+  // 控制点1坐标
+  const v1 = new THREE.Vector3(
+    x0 + (x1 - x0) / 4, // 在起点的基础上，控制点1的坐标为起点的1/4
+    y0 + (y1 - y0) / 4, // 在起点的基础上，控制点1的坐标为起点的1/4
+    convexZ,
+  );
+  // 控制点2坐标
+  const v2 = new THREE.Vector3(
+    x0 + ((x1 - x0) * 3) / 4, // 在起点的基础上，控制点2的坐标为起点的3/4
+    y0 + ((y1 - y0) * 3) / 4, // 在起点的基础上，控制点2的坐标为起点的3/4
+    convexZ,
+  );
+  // 终点坐标
+  const v3 = new THREE.Vector3(x1, y1, 0);
+  // 使用3次贝塞尔曲线来绘制曲线
+  const lineCurve = new THREE.CubicBezierCurve3(v0, v1, v2, v3);
+  // 获取曲线上的点 暂时定为获取1000个点 后续绘制流线动画的时候更好的计算
+  return lineCurve.getPoints(divisions);
+};

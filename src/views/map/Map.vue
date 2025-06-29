@@ -11,6 +11,7 @@
   import popBox from "../../components/Pop-box.vue";
   import { createMarkBox } from "../../utils/mesh/pop-mesh.ts";
   import chinaJson from "../../assets/china.json";
+  import { getCurvePoint } from "../../utils/map.ts";
   import * as d3 from "d3";
 
   import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -304,7 +305,137 @@
     scene.add(map);
 
     // 地图加载完毕后，可以根据地图数据添加飞线
-    addFlyingLinesFromMapData(chinaJson);
+    // addFlyingLinesFromMapData(chinaJson);
+    addFlyingLines();
+  };
+
+  const addFlyingLines = () => {
+    const start = projection([116.724502, 39.905023]) as [number, number];
+    const end = projection([101.780482, 36.622538]) as [number, number];
+
+    const width = 0.5;
+    const color = "#c66e5e";
+    // 获取当前线的坐标点信息
+    const points = getCurvePoint({ x0: start[0], y0: start[1], x1: end[0], y1: end[1] });
+    const curve = new THREE.CatmullRomCurve3(points);
+    const lineColor = new THREE.Color(color);
+    const tubeGeometry = new THREE.TubeGeometry(
+      curve, // 一个由基类Curve继承而来的3D路径。
+      256, // 组成这一管道的分段数，默认值为64。
+      width * 2, // 管道半径。宽度比设置的大一点是为了让流线从管道内部穿过
+      8, // 管道横截面的分段数目，默认值为8。
+      false, // 管道的两端是否闭合。
+    );
+    const material = new THREE.MeshBasicMaterial({
+      color: lineColor,
+      transparent: true,
+      opacity: 1,
+      depthTest: false,
+    });
+    const mesh = new THREE.Mesh(tubeGeometry, material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.translateZ(101);
+
+    flyingLinesAnimate(points);
+
+    scene.add(mesh);
+  };
+
+  // 创建飞线动画集合体
+  const flyingLinesAnimate = (points: any) => {
+    const indexList = points.map((_: any, index: number) => index);
+    // 根据坐标点数组创建出一个线状几何体
+    const bufferGeometry = new THREE.BufferGeometry().setFromPoints(points);
+    // 给几何体添加自定义的索引标识 用来后续根据索引设置点的透明度
+    bufferGeometry.setAttribute("aIndex", new THREE.Float32BufferAttribute(indexList, 1));
+    const flowLine = {
+      width: 1000,
+      length: 200,
+      divisions: 1000,
+    };
+    const material = new THREE.ShaderMaterial({
+      depthTest: false,
+      uniforms: {
+        // 线条颜色
+        uColor: {
+          value: new THREE.Color("#fe0435"),
+        },
+        // 时间1-1000
+        uTime: {
+          value: 0,
+        },
+        // 水滴宽度
+        uWidth: {
+          value: flowLine.width,
+        },
+        // 水滴长度
+        uLength: {
+          value: flowLine.length,
+        },
+      },
+      vertexShader: /*glsl*/ `
+        attribute float aIndex; // 内部属性 浮点 当前序号
+
+        uniform float uTime; // 全局变量 浮点 当前时间
+
+        uniform float uWidth; // 全局变量 浮点 当前时间
+
+        uniform vec3 uColor; // 全局变量 颜色 设置的颜色
+
+        varying float vSize; // 片元变量（需要传递到片面着色器） 浮点 尺寸
+
+        uniform float uLength; // 全局变量 浮点 线段长度
+
+        void main(){
+            vec4 viewPosition = viewMatrix * modelMatrix * vec4(position,1);
+
+            gl_Position = projectionMatrix * viewPosition; // 顶点矩阵变换 设置各个点的位置
+
+            // 当前顶点的位置处于线段长度内 则设置水滴大小
+            if(aIndex >= uTime - uLength && aIndex < uTime){
+              // 水滴大小根据当前位置慢慢变小
+              // p1 uWidth越大水滴越粗
+              // vSize = uWidth * ((aIndex - uTime + uLength) / uLength);
+              // p2 uWidth越大水滴越细
+              vSize = (aIndex + uLength - uTime) / uWidth;
+            }
+            gl_PointSize = vSize * 15.0; // 增加倍数让点更大更明显
+        }
+      `,
+      fragmentShader: /*glsl*/ `
+        varying float vSize;
+        uniform vec3 uColor;
+        void main(){
+            // 透明度根据当前大小确定是否展示
+            if(vSize<=0.0){
+              gl_FragColor = vec4(1,0,0,0);
+            }else{
+              gl_FragColor = vec4(uColor,1);
+            }
+        }
+      `,
+      transparent: true,
+      vertexColors: false,
+    });
+
+    const mesh = new THREE.Points(bufferGeometry, material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.translateZ(101);
+    scene.add(mesh);
+
+    gsap.fromTo(
+      (material as any)?.uniforms?.uTime,
+      { value: 0 },
+      {
+        // 实现飞线钻地效果需要让 动画节段数 = 飞线长度 + 飞线点数量
+        value: flowLine.length + flowLine.divisions,
+        duration: 3,
+        repeat: -1,
+        delay: 0,
+        ease: "none",
+        onUpdate: () => {},
+      },
+    );
   };
 
   // 根据地图数据添加飞线 (示例)
